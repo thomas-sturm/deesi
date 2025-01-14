@@ -1,5 +1,5 @@
 >>> from deesi import *
->>> from deesi.theories.RCF import *
+>>> from deesi.RCF import *
 
 >>> list(sorted([T, F]))
 [T, F]

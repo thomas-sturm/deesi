@@ -1,6 +1,6 @@
-"""This module :mod:`deesi.abc.simplify` provides a generic abstract
-implementation of *deep simplifcication* based on generating and propagating
-internal representations during recursion. This is essentially the *standard
+"""This module :mod:`deesi.abc` provides a generic abstract implementation of
+*deep simplifcication* based on generating and propagating internal
+representations during recursion. This is essentially the *standard
 simplifier*, which has been proposed for Ordered Fields in
 [DolzmannSturm-1997]_.
 """
@@ -11,10 +11,10 @@ from dataclasses import dataclass
 from enum import auto, Enum
 from typing import Generic, Iterable, Optional, Self, TypeVar
 
-from ..firstorder import (
+from .firstorder import (
     And, AtomicFormula, _F, Formula, Or, QuantifiedFormula, _T, Term, Variable)
 
-from ..support.tracing import trace  # noqa
+from .support.tracing import trace  # noqa
 
 # About Generic:
 # https://stackoverflow.com/q/74103528/
@@ -115,11 +115,7 @@ class Options(ABC):
 
 @dataclass(frozen=True)
 class Simplify(Generic[α, τ, χ, σ, ρ, ω]):
-    """Deep simplification following [DolzmannSturm-1997]_.
-
-    .. seealso::
-      Derived classes in various theories: :class:`.RCF.simplify.Simplify`,
-      :class:`.Sets.simplify.Simplify`
+    """Deep simplification.
     """
 
     _options: ω

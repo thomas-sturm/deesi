@@ -1,5 +1,5 @@
 >>> from deesi import *
->>> from deesi.theories.RCF import *
+>>> from deesi.RCF import *
 
 >>> a, b, c, d, x, y, z = VV.get('a', 'b', 'c', 'd', 'x', 'y', 'z')
 >>> x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11 = VV.get(*(f'x{i}' for i in range(12)))

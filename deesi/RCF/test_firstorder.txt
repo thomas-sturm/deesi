@@ -1,6 +1,6 @@
 >>> from collections import Counter
 >>> from deesi.firstorder import *
->>> from deesi.theories.RCF import *
+>>> from deesi.RCF import *
 >>> a, b, x, y, z = VV.get('a', 'b', 'x', 'y', 'z')
 
 __eq__, __ne__, __hash__:

@@ -3,9 +3,8 @@ import subprocess
 from typing import Final, Iterable
 
 import deesi.firstorder as firstorder
-from deesi.support.excepthook import NoTraceException
-from deesi.theories.RCF.atomic import AtomicFormula, Variable
-from deesi.theories.RCF.typing import Formula
+from deesi.RCF.atomic import AtomicFormula, Variable
+from deesi.RCF.typing import Formula
 
 _START: Final = '889e0d7343405c079195e7b8903c8c9e'
 _END: Final = 'b0061974914468de549a2af8ced10316'
@@ -176,7 +175,7 @@ def gqe(f: Formula, generic: GENERIC = GENERIC.FULL) -> tuple[list[AtomicFormula
       hand sides of assumptions are monomial .
 
     >>> from deesi import *
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> a, b, c, x = VV.get('a', 'b', 'c', 'x')
     >>> redlog.gqe(Ex(x, (a + 1) * x**2 + b * x + c == 0), generic=GENERIC.MONOMIAL)
     ([b != 0], Or(a + 1 == 0, 4*a*c - b^2 + 4*c <= 0))
@@ -188,7 +187,7 @@ def gqe(f: Formula, generic: GENERIC = GENERIC.FULL) -> tuple[list[AtomicFormula
     """
     match generic:
         case GENERIC.NONE:
-            raise NoTraceException('GENERIC.NONE is not supported - use redlog.qe instead')
+            raise ValueError('GENERIC.NONE is not supported - use redlog.qe instead')
         case GENERIC.MONOMIAL:
             rl_switches = 'off rlqegenct;'
         case GENERIC.FULL:
@@ -225,7 +224,7 @@ def qe(f: Formula, assume: Iterable[AtomicFormula] = []) -> Formula:
       A quantifier-free equivalent of `f` modulo `assume`.
 
     >>> from deesi import *
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> a, b, c, x, y = VV.get('a', 'b', 'c', 'x', 'y')
     >>> redlog.qe(All(x, Ex(y, x**2 + x*y + b > 0 and x + a*y**2 + b <= 0)));
     a < 0

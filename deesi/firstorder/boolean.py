@@ -26,7 +26,7 @@ class Equivalent(BooleanFormula[α, τ, χ, σ]):
     toplevel operator represents the Boolean operator
     :math:`\longleftrightarrow`.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, = VV.get('x')
     >>> Equivalent(x >= 0, Or(x > 0, x == 0))
     Equivalent(x >= 0, Or(x > 0, x == 0))
@@ -62,7 +62,7 @@ class Implies(BooleanFormula[α, τ, χ, σ]):
     """A class whose instances are equivalences in the sense that their
     toplevel operator represents the Boolean operator :math:`\\longrightarrow`.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, = VV.get('x')
     >>> Implies(x == 0, x >= 0)
     Implies(x == 0, x >= 0)
@@ -105,7 +105,7 @@ class And(BooleanFormula[α, τ, χ, σ]):
     toplevel operator represents the Boolean operator
     :math:`\\wedge`.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, y, z = VV.get('x', 'y', 'z')
     >>> And()
     T
@@ -123,7 +123,7 @@ class And(BooleanFormula[α, τ, χ, σ]):
 
     def __init__(self, *args: Formula[α, τ, χ, σ]) -> None:
         """
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, = VV.get('a')
         >>> And(a >= 0, a != 0)
         And(a >= 0, a != 0)
@@ -188,7 +188,7 @@ class Or(BooleanFormula[α, τ, χ, σ]):
     toplevel operator represents the Boolean operator
     :math:`\\vee`.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, = VV.get('x')
     >>> Or()
     F
@@ -206,7 +206,7 @@ class Or(BooleanFormula[α, τ, χ, σ]):
 
     def __init__(self, *args: Formula[α, τ, χ, σ]) -> None:
         """
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, = VV.get('a')
         >>> Or(a > 0, a == 0)
         Or(a > 0, a == 0)
@@ -271,7 +271,7 @@ class Not(BooleanFormula[α, τ, χ, σ]):
     toplevel operator is the Boolean operator
     :math:`\\neg`.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> a, = VV.get('a')
     >>> Not(a == 0)
     Not(a == 0)
@@ -283,7 +283,7 @@ class Not(BooleanFormula[α, τ, χ, σ]):
 
     def __init__(self, arg: Formula[α, τ, χ, σ]) -> None:
         """
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, = VV.get('a')
         >>> Not(a == 0)
         Not(a == 0)
@@ -306,7 +306,7 @@ def involutive_not(arg: Formula[α, τ, χ, σ]) -> Formula[α, τ, χ, σ]:
     """Construct a formula equivalent Not(arg) using the involutive law if
     applicable.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, = VV.get('x')
     >>> involutive_not(x == 0)
     Not(x == 0)

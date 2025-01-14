@@ -23,7 +23,7 @@ class QuantifiedFormula(Formula[α, τ, χ, σ]):
     def var(self) -> χ:
         """The variable of the quantifier.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y = VV.get('x', 'y')
         >>> f = All(x, Ex(y, x == y))
         >>> f.var
@@ -43,7 +43,7 @@ class QuantifiedFormula(Formula[α, τ, χ, σ]):
     def arg(self) -> Formula[α, τ, χ, σ]:
         """The subformula in the scope of the :class:`QuantifiedFormula`.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y = VV.get('x', 'y')
         >>> f = All(x, Ex(y, x == y))
         >>> f.arg
@@ -58,7 +58,7 @@ class QuantifiedFormula(Formula[α, τ, χ, σ]):
     def __init__(self, vars_: χ | Sequence[χ], arg: Formula[α, τ, χ, σ]) -> None:
         """Construct a quantified formula.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> a, b, x = VV.get('a', 'b', 'x')
         >>> All((a, b), Ex(x, a*x + b >= 0))
         All(a, All(b, Ex(x, a*x + b >= 0)))
@@ -88,7 +88,7 @@ class Ex(QuantifiedFormula[α, τ, χ, σ]):
     variables as a shorthand.
 
     >>> from deesi.firstorder import *
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, y, z = VV.get('x', 'y', 'z')
     >>> Ex(x, x**2 == y)
     Ex(x, x^2 - y == 0)
@@ -110,7 +110,7 @@ class All(QuantifiedFormula[α, τ, χ, σ]):
     :math:`\forall`. Besides variables, the quantifier accepts sequences of
     variables as a shorthand.
 
-    >>> from deesi.theories.RCF import *
+    >>> from deesi.RCF import *
     >>> x, y = VV.get('x', 'y')
     >>> All(x, x**2 >= 0)
     All(x, x^2 >= 0)
@@ -122,28 +122,3 @@ class All(QuantifiedFormula[α, τ, χ, σ]):
         """A class method yielding the dual class :class:`Ex` of class:`All`.
         """
         return Ex
-
-
-class Prefix(deque[tuple[type[All | Ex], list[χ]]]):
-    """Holds a quantifier prefix of a formula.
-
-    >>> from deesi.theories.RCF import *
-    >>> x, x0, epsilon, delta = VV.get('x', 'x0', 'epsilon', 'delta')
-    >>> Prefix((All, [x0, epsilon]), (Ex, [delta]), (All, [x]))
-    Prefix([(<class 'deesi.firstorder.quantified.All'>, [x0, epsilon]),
-            (<class 'deesi.firstorder.quantified.Ex'>, [delta]),
-            (<class 'deesi.firstorder.quantified.All'>, [x])])
-    >>> print(_)
-    All [x0, epsilon]  Ex [delta]  All [x]
-
-    .. seealso::
-        * :external:class:`collections.deque` -- for mehods inherited from double-ended queues
-        * :meth:`matrix <.Formula.matrix>` -- the matrix of a prenex formula
-        * :meth:`quantify <.Formula.quantify>` -- add quantifier prefix
-    """
-
-    def __init__(self, *blocks: tuple[type[All[α, τ, χ, σ] | Ex[α, τ, χ, σ]], list[χ]]) -> None:
-        super().__init__(blocks)
-
-    def __str__(self) -> str:
-        return '  '.join(q.__name__ + ' ' + str(vars_) for q, vars_ in self)

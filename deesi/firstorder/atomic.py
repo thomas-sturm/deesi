@@ -9,7 +9,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import inspect
 from types import FrameType
-from typing import Any, final, Generic, Iterator, Sequence, TypeVar
+from typing import final, Generic, Iterator, Sequence, TypeVar
 
 from .formula import α, τ, χ, σ, Formula
 
@@ -28,10 +28,9 @@ class VariableSet(Generic[χ]):
     module variable :data:`VV` there.
 
     .. seealso::
-      Derived classes in various theories and their unique instances:
+      Derived class in RCF and their unique instances:
       :class:`.RCF.atomic.VariableSet`, :data:`.RCF.atomic.VV` for Real Closed
-      Fields and :class:`.Sets.atomic.VariableSet`, :data:`.Sets.atomic.VV`
-      for Sets.
+      Fields.
     """
 
     @property
@@ -51,7 +50,7 @@ class VariableSet(Generic[χ]):
     def __getitem__(self, index: str) -> χ:
         """Obtain the unique variable with name `index`.
 
-        >>> from deesi.theories import RCF
+        >>> from deesi import RCF
         >>> assert isinstance(RCF.VV, RCF.atomic.VariableSet)
         >>> x = RCF.VV['x']; x
         x
@@ -66,7 +65,7 @@ class VariableSet(Generic[χ]):
     def get(self, *args: str) -> tuple[χ, ...]:
         """Obtain several variables simultaneously by their names.
 
-        >>> from deesi.theories import RCF
+        >>> from deesi import RCF
         >>> assert isinstance(RCF.VV, RCF.atomic.VariableSet)
         >>> x, y = RCF.VV.get('x', 'y')
         >>> assert isinstance(x, RCF.atomic.Variable)
@@ -85,7 +84,7 @@ class VariableSet(Generic[χ]):
         :meth:`.get`.
 
         >>> if __name__ == '__main__':  # to prevent doctest failure
-        ...     from deesi.theories import RCF
+        ...     from deesi import RCF
         ...     assert isinstance(RCF.VV, RCF.atomic.VariableSet)
         ...     RCF.VV.imp('x', 'y')
         ...     assert isinstance(x, RCF.atomic.Variable)
@@ -140,22 +139,8 @@ class Term(Generic[τ, χ, σ, κ]):
     cannot be used in the static method :meth:`.sort_key`.
 
     .. seealso::
-      Derived classes in various theories: :class:`.RCF.atomic.Term` for Real
-      Closed Fields.
-
-    .. note::
-      The theory :mod:`.deesi.theories.Sets` does not subclass :class:`.Term`.
-      Since it has no function symbols, it can use instances of
-      :class:`.Sets.atomic.Variable` as terms.
+      Derived class :class:`.RCF.atomic.Term` for Real Closed Fields.
     """
-
-    @abstractmethod
-    def as_latex(self) -> str:
-        """LaTeX representation as a string. This is required by
-        :meth:`.Formula.as_latex` for the representation of quantified
-        variables.
-        """
-        ...
 
     @abstractmethod
     def sort_key(self) -> κ:
@@ -168,12 +153,12 @@ class Term(Generic[τ, χ, σ, κ]):
           constructors for instances of subclasses of :class:`.AtomicFormula`.
           For example, :obj:`.RCF.atomic.Term.__lt__` constructs an inequality
 
-          >>> from deesi.theories.RCF import *
+          >>> from deesi.RCF import *
           >>> a, b = VV.get('a', 'b')
           >>> a < b
           a - b < 0
           >>> type(_)
-          <class 'deesi.theories.RCF.atomic.Lt'>
+          <class 'deesi.RCF.atomic.Lt'>
 
           As a consquence, rich comparisons are not available for defining an
           ordering on terms, and we instead provid a `key`, which can be used,
@@ -209,8 +194,7 @@ class Variable(Term[χ, χ, σ, κ]):
     to be implemented for the various theories.
 
     .. seealso::
-      Derived classes in various theories: :class:`.RCF.atomic.Variable` for
-      Real Closed Fields and :class:`.Sets.atomic.Variable` for Sets.
+      Derived class :class:`.RCF.atomic.Variable` for Real Closed Fields.
     """
 
     @abstractmethod
@@ -228,8 +212,7 @@ class AtomicFormula(Formula[α, τ, χ, σ]):
     specific theory.
 
     .. seealso::
-      Derived classes in various theories: :class:`.RCF.atomic.AtomicFormula`
-      for Real Closed Fields and :class:`.Sets.atomic.AtomicFormula` for Sets.
+      Derived class :class:`.RCF.atomic.AtomicFormula` for Real Closed Fields.
     """
 
     @abstractmethod
@@ -237,22 +220,6 @@ class AtomicFormula(Formula[α, τ, χ, σ]):
         """Returns :external:obj:`True` if `self` should be sorted before or is
         equal to other. This method is required by the corresponding
         first-order method :meth:`.Formula.__le__`.
-        """
-        ...
-
-    @abstractmethod
-    def __str__(self) -> str:
-        """Representation of this atomic formula used in printing. This method
-        is required by the corresponding recursive first-order method.
-        """
-        #  Overloading here breaks an infinite recursion in the inherited
-        #  method.
-        ...
-
-    @abstractmethod
-    def as_latex(self) -> str:
-        """Latex representation as a string. This method is required by the
-        corresponding recursive first-order method :meth:`.Formula.as_latex`.
         """
         ...
 
@@ -265,15 +232,6 @@ class AtomicFormula(Formula[α, τ, χ, σ]):
     @final
     def atoms(self: α) -> Iterator[α]:
         yield self
-
-    @abstractmethod
-    def bvars(self, quantified: frozenset[χ] = frozenset()) -> Iterator[χ]:
-        """Iterate over occurrences of variables that are elements of
-        `quantified`. Yield each such variable once for each term that it
-        occurs in. This method is required by the corresponding recursive
-        first-order method :meth:`.Formula.bvars`.
-        """
-        ...
 
     @classmethod
     @abstractmethod

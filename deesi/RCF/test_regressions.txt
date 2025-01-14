@@ -1,5 +1,5 @@
 >>> from deesi import *
->>> from deesi.theories.RCF import *
+>>> from deesi.RCF import *
 
 >>> VV.imp('u2')
 >>> simplify(u2**2 == 0)

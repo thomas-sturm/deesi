@@ -10,10 +10,9 @@ from . import firstorder
 
 from .firstorder import (Formula, AtomicFormula, Term, Variable,  # noqa
                          BooleanFormula, Equivalent, Implies, And, Or, Not,
-                         T, F, QuantifiedFormula, Ex, All, Prefix)
+                         T, F, QuantifiedFormula, Ex, All)
 
-from . import theories
+from . import RCF
+from .RCF import *  # noqa
 
-from .theories import RCF  # noqa
-
-__all__ = firstorder.__all__ + theories.__all__
+__all__ = firstorder.__all__ + RCF.__all__

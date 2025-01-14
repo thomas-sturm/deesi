@@ -1,4 +1,4 @@
-ignores = --ignore=deesi/theories/RCF/test_simplify_motor_redlog.txt
+ignores = --ignore=deesi/RCF/test_simplify_motor_redlog.txt
 
 .PHONY: pytest pytest-full test-doc mypy test test-all doc pygount\
 		coverage coverage_html clean veryclean conda-build

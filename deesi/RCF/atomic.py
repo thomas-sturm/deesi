@@ -24,24 +24,22 @@ from sage.rings.polynomial.polynomial_element import (
 from sage.rings.polynomial.term_order import TermOrder
 from sage.rings.rational import Rational
 
-from ... import firstorder
-from ...firstorder import _T, _F
-from ...support.excepthook import NoTraceException
+from .. import firstorder
+from ..firstorder import _T, _F
 
-from ...support.tracing import trace  # noqa
+from ..support.tracing import trace  # noqa
 
 
 τ = TypeVar('τ', bound='Term')
 """A type variable denoting a type of terms with upper bound
-:class:`deesi.theories.RCF.Term`.
+:class:`deesi.RCF.Term`.
 """
 
 CACHE_SIZE: Final[Optional[int]] = 2**16
 
 
 def _caches():
-    from .simplify import Simplify
-    from .substitution import _SubstValue
+    from .simplify import Simplify, _SubstValue
     return [Term.factor, _SubstValue.as_term, Simplify._simpl_at]
 
 
@@ -329,7 +327,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         """Iterate over the polynomial representation of the term, yielding
         pairs of coefficients and power products.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> [(abs(coef), power_product) for coef, power_product in t]
@@ -422,7 +420,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         """LaTeX representation as a string. Implements the abstract method
         :meth:`.firstorder.atomic.Term.as_latex`.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.as_latex()
@@ -439,7 +437,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         """Return the coefficient of the variables with the degrees specified
         in the python dictionary `degrees`.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.coefficient({x: 1, y: 1})
@@ -457,7 +455,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
     def constant_coefficient(self) -> mpq:
         """Return the constant coefficient of this term.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.constant_coefficient()
@@ -473,7 +471,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         """Return the content of this term, which is defined as the gcd of its
         integer coefficients.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2 - (x**2 + y**2)
         >>> t.content()
@@ -490,7 +488,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
     def degree(self, x: Variable) -> int:
         """Return the degree in `x` of this term.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.degree(y)
@@ -505,7 +503,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
     def derivative(self, x: Variable, n: int = 1) -> Term:
         """The `n`-th derivative of this term, with respect to `x`.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.derivative(x)
@@ -526,7 +524,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
           their multiplicities. All irreducible factors are monic. Note that
           the return value is uniquely determined by this specification.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = -x**2 + y**2
         >>> t.factor()
@@ -562,7 +560,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         is based on *trivial square sum* properties of coefficient signs and
         exponents.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> Term(0).is_definite()
         <DEFINITE.ZERO: 6>
@@ -613,7 +611,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         lexicographical term order :mod:`deglex
         <sage.rings.polynomial.term_order>`.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> f = 2*x*y**2 + 3*x**2 + 1
         >>> f.lc()
@@ -641,7 +639,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
         """List of monomials of this term. A monomial is defined here as a
         summand of a polynomial *without* the coefficient.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> t = (x - y + 2) ** 2
         >>> t.monomials()
@@ -687,7 +685,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
     def quo_rem(self, other: Term) -> tuple[Term, Term]:
         """Quotient and remainder of this term and `other`.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y = VV.get('x', 'y')
         >>> f = 2*y*x**2 + x + 1
         >>> f.quo_rem(x)
@@ -713,7 +711,7 @@ class Term(firstorder.Term['Term', 'Variable', int, SortKey['Term']]):
     def subs(self, d: Mapping[Variable, Term | int | mpq]) -> Term:
         """Simultaneous substitution of terms for variables.
 
-        >>> from deesi.theories.RCF import VV
+        >>> from deesi.RCF import VV
         >>> x, y, z = VV.get('x', 'y', 'z')
         >>> f = 2*y*x**2 + x + 1
         >>> f.subs({x: y, y: 2*z})
@@ -812,7 +810,7 @@ class AtomicFormula(firstorder.AtomicFormula['AtomicFormula', 'Term', 'Variable'
     def __init__(self, lhs: Term | int, rhs: Term | int):
         super().__init__()
         if not isinstance(self, (Eq, Ne, Ge, Gt, Le, Lt)):
-            raise NoTraceException('Instantiate one of Eq, Ne, Ge, Gt, Le, Lt instead')
+            raise TypeError('Instantiate one of Eq, Ne, Ge, Gt, Le, Lt instead')
         if not isinstance(lhs, Term):
             lhs = Term(lhs)
         if not isinstance(rhs, Term):

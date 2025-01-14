@@ -1,4 +1,4 @@
->>> from deesi.theories.RCF import VV
+>>> from deesi.RCF import VV
 
 >>> VV.imp('a', 'b', 'x')
 >>> a * x + b == 0

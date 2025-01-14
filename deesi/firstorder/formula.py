@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 import functools
-from typing import Any, Callable, Generic, Iterator, Optional, Self, TypeVar
+from typing import Any, Callable, Generic, Iterable, Iterator, Optional, Self, TypeVar
 from typing_extensions import TypeIs
 
 from ..support.tracing import trace  # noqa
@@ -106,7 +106,7 @@ class Formula(Generic[α, τ, χ, σ]):
 
         Note that this is not a logical operator for equality.
 
-        >>> from deesi.theories.RCF import Ne
+        >>> from deesi.RCF import Ne
         >>>
         >>> e1 = Ne(1, 0)
         >>> e2 = Ne(1, 0)
@@ -180,6 +180,29 @@ class Formula(Generic[α, τ, χ, σ]):
         r += ')'
         return r
 
+    def all(self, ignore: Iterable[χ] = set()) -> Formula[α, τ, χ, σ]:
+        """Universal closure. Universally quantifiy all variables occurring
+        free in `self`, except the ones in `ignore`.
+
+        >>> from deesi.RCF import *
+        >>> a, b, x = VV.get('a', 'b', 'x')
+        >>> f = Ex(x, And(x >= 0, a*x + b == 0))
+        >>> f.all()
+        All(b, All(a, Ex(x, And(x >= 0, a*x + b == 0))))
+
+        .. seealso::
+            * :class:`All <.quantified.All>` -- universal quantifier
+            * :meth:`ex` -- existential closure
+            * :meth:`quantify` -- add quantifier prefix
+        """
+        variables = list(set(self.fvars()) - set(ignore))
+        if variables:
+            variables.sort(key=lambda v: v.sort_key())
+        f = self
+        for v in reversed(variables):
+            f = All(v, f)
+        return f
+
     def as_redlog(self) -> str:
         r"""Redlog representation as a string, which can be used elsewhere.
         """
@@ -215,7 +238,7 @@ class Formula(Generic[α, τ, χ, σ]):
         Recall that the truth values :data:`T <.boolean.T>` and :data:`F
         <.boolean.F>` are not atoms:
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y, z = VV.get('x', 'y', 'z')
         >>> f = Or(And(x == 0, y == 0, T), And(x == 0, y == z, z != 0))
         >>> list(f.atoms())
@@ -259,7 +282,7 @@ class Formula(Generic[α, τ, χ, σ]):
         to a truth value or an :class:`AtomicFormula
         <.firstorder.atomic.AtomicFormula>` in the expression tree:
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y, z = VV.get('x', 'y', 'z')
         >>> f = Ex(x, And(x == y, All(x, Ex(y, Ex(z, x == y + 1)))))
         >>> f.depth()
@@ -289,7 +312,7 @@ class Formula(Generic[α, τ, χ, σ]):
         The parameter `quantified` specifies variable to be considered bound in
         addition to those that are explicitly quantified in `self`.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, x, y, z = VV.get('a', 'x', 'y', 'z')
         >>> f = All(y, And(Ex(x, a + x - y == 0), Ex(z, x + y == a)))
         >>> list(f.fvars())
@@ -399,7 +422,7 @@ class Formula(Generic[α, τ, χ, σ]):
         In the following example, ``z`` is a quantified variable but not a
         bound variable:
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, b, c, x, y, z = VV.get('a', 'b', 'c', 'x', 'y', 'z')
         >>> f = All(y, And(Ex(x, a == y), Ex(z, a == y)))
         >>> list(f.qvars())
@@ -472,20 +495,14 @@ class Formula(Generic[α, τ, χ, σ]):
            <.firstorder.atomic.AtomicFormula>` within various theories:
 
            * :meth:`RCF.atomic.AtomicFormula.simplify
-             <deesi.theories.RCF.atomic.AtomicFormula.simplify>` \
+             <deesi.RCF.atomic.AtomicFormula.simplify>` \
             -- real closed fields
-           * :meth:`Sets.atomic.AtomicFormula.simplify
-             <deesi.theories.Sets.atomic.AtomicFormula.simplify>` \
-            -- theory of Sets
 
            More powerful simplifiers provided by various theories:
 
            * :func:`RCF.simplify.simplify() \
-             <deesi.theories.RCF.simplify.simplify>`
+             <deesi.RCF.simplify.simplify>`
                 -- real closed fields, standard simplifier based on implicit theories
-           * :func:`Sets.simplify.simplify() \
-              <deesi.theories.Sets.simplify.simplify>`
-                -- sets, standard simplifier based on implicit theories
         """
         match self:
             case _F() | _T():
@@ -557,7 +574,7 @@ class Formula(Generic[α, τ, χ, σ]):
     def subs(self, substitution: dict[χ, τ | σ]) -> Self:
         """Substitution of terms for variables.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, b, x = VV.get('a', 'b', 'x')
         >>> f = Ex(x, x == a)
         >>> f.subs({x: a})
@@ -623,7 +640,7 @@ class Formula(Generic[α, τ, χ, σ]):
         relation symbols with their complements. The result is then even a
         Positive Normal Form.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> a, y = VV.get('a', 'y')
         >>> f = Equivalent(And(a == 0, T), Ex(y, Not(y == a)))
         >>> f.to_nnf()
@@ -680,7 +697,7 @@ class Formula(Generic[α, τ, χ, σ]):
         built from commutative  boolean operators (:class:`.And`, :class:`.Or`,
         :class:`.Equivalent`) are sorted after the application of `map_atoms`.
 
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y, z = VV.get('x', 'y', 'z')
         >>> f = And(x == y, y < z)
         >>> f.traverse(map_atoms=lambda atom: atom.op(atom.lhs - atom.rhs, 0))

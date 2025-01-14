@@ -13,20 +13,20 @@ from typing import Collection, Final, Iterable, Iterator, Optional, Self
 
 from gmpy2 import mpfr, mpq, sign
 
-from ... import abc
-from ...firstorder import And, _F, Not, Or, _T
-from .atomic import AtomicFormula, CACHE_SIZE, DEFINITE, Eq, Ge, Le, Gt, Lt, Ne, Term, Variable
-from .substitution import _SubstValue, _Substitution  # type: ignore
+from .. import abc
+from ..firstorder import And, _F, Not, Or, _T
+from .atomic import (AtomicFormula, CACHE_SIZE, DEFINITE, Eq, Ge, Le, Gt, Lt,
+                     Ne, SortKey, Term, Variable)
 from .typing import Formula
 
-from ...support.tracing import trace  # noqa
+from ..support.tracing import trace  # noqa
 
 
 oo: Final[mpfr] = mpfr('inf')
 
 
 @dataclass(frozen=True)
-class Options(abc.simplify.Options):
+class Options(abc.Options):
     explode_always: bool = True
     lift: bool = True
     prefer_order: bool = True
@@ -132,6 +132,147 @@ class _Range:
             ropen = self.lopen
         exc = {scale * point + shift for point in self.exc}
         return self.__class__(lopen, start, end, ropen, exc)
+
+
+@dataclass(frozen=True)
+class _SubstValue:
+    coefficient: mpq
+    variable: Optional[Variable]
+
+    def __eq__(self, other: Self) -> bool:  # type: ignore[override]
+        if self.coefficient != other.coefficient:
+            return False
+        if self.variable is None and other.variable is None:
+            return True
+        if self.variable is None or other.variable is None:
+            return False
+        return self.variable.sort_key() == other.variable.sort_key()
+
+    def __post_init__(self) -> None:
+        assert self.coefficient != 0 or self.variable is None
+
+    @lru_cache(maxsize=CACHE_SIZE)
+    def as_term(self) -> Term:
+        if self.variable is None:
+            return Term(self.coefficient)
+        else:
+            return self.coefficient * self.variable
+
+
+@dataclass
+class _Node:
+    coefficient: mpq
+    variable: Optional[Variable]
+    parent: Optional[_Node]
+
+
+@dataclass
+class _Root:
+    coefficient: mpq
+    node: _Node
+
+
+@dataclass
+class _Substitution:
+    nodes: dict[SortKey[Variable], _Node] = field(default_factory=dict)
+    constant_node: Final[_Node] = field(default_factory=lambda: _Node(mpq(1), None, None))
+
+    def __iter__(self) -> Iterator[tuple[Variable, _SubstValue]]:
+        for key, node in self.nodes.items():
+            if node.parent is None:
+                continue
+            root = self.find2(node)
+            yield key.term, _SubstValue(root.coefficient, root.node.variable)
+
+    def as_gb(self, ignore: Optional[Variable] = None) -> list[Term]:
+        """Convert this :class:._Substitution` into a Gröbner basis that can be
+        used as an argument to reduction methods.
+        """
+        G = []
+        for var, val in self:
+            if ignore is None or var.sort_key() != ignore.sort_key():
+                G.append(var - val.as_term())
+        return G
+
+    def copy(self) -> Self:
+        result = self.__class__()
+        for var, val in self:
+            result.union(_SubstValue(mpq(1), var), val)
+        return result
+
+    def find(self, v: Variable) -> _SubstValue:
+        root = self.find1(v)
+        return _SubstValue(root.coefficient, root.node.variable)
+
+    def find1(self, v: Optional[Variable]) -> _Root:
+        if v is None:
+            return _Root(mpq(1), self.constant_node)
+        key = v.sort_key()
+        node: _Node
+        try:
+            node = self.nodes[key]
+        except KeyError:
+            node = self.nodes[key] = _Node(mpq(1), v, None)
+        return self.find2(node)
+
+    def find2(self, node: _Node) -> _Root:
+        if node.variable is None:
+            return _Root(mpq(1), node)
+        parent = node.parent
+        if parent is None:
+            return _Root(mpq(1), node)
+        root = self.find2(parent)
+        node.coefficient *= root.coefficient
+        node.parent = root.node
+        return _Root(node.coefficient, root.node)
+
+    def union(self, val1: _SubstValue, val2: _SubstValue) -> None:
+        root1 = self.find1(val1.variable)
+        root2 = self.find1(val2.variable)
+        c1 = val1.coefficient * root1.coefficient
+        c2 = val2.coefficient * root2.coefficient
+        if root1.node.variable is not None and root2.node.variable is not None:
+            sort_key1 = root1.node.variable.sort_key()
+            sort_key2 = root2.node.variable.sort_key()
+            if sort_key1 == sort_key2:
+                if c1 != c2:
+                    root1.node.coefficient = mpq(0)
+                    root1.node.parent = self.constant_node
+            elif sort_key1 < sort_key2:
+                root2.node.coefficient = c1 / c2
+                root2.node.parent = root1.node
+            else:
+                root1.node.coefficient = c2 / c1
+                root1.node.parent = root2.node
+        elif root1.node.variable is None and root2.node.variable is not None:
+            root2.node.coefficient = c1 / c2
+            root2.node.parent = self.constant_node
+        elif root1.node.variable is not None and root2.node.variable is None:
+            root1.node.coefficient = c2 / c1
+            root1.node.parent = self.constant_node
+        else:
+            if c1 != c2:
+                from .simplify import InternalRepresentation
+                raise InternalRepresentation.Inconsistent()
+
+    def is_redundant(self, val1: _SubstValue, val2: _SubstValue) -> Optional[bool]:
+        """Check if the equation ``val1 == val2`` is redundant modulo self.
+        """
+        root1 = self.find1(val1.variable)
+        root2 = self.find1(val2.variable)
+        c1 = val1.coefficient * root1.coefficient
+        c2 = val2.coefficient * root2.coefficient
+        if root1.node.variable is None and root2.node.variable is None:
+            return c1 == c2
+        if root1.node.variable is None or root2.node.variable is None:
+            return None
+        if root1.node.variable == root2.node.variable and c1 == c2:
+            return True
+        else:
+            return None
+
+    def equations(self) -> Iterator[Eq]:
+        raise NotImplementedError()
 
 
 @dataclass
@@ -366,24 +507,24 @@ class _Knowledge:
 
 @dataclass
 class InternalRepresentation(
-        abc.simplify.InternalRepresentation[AtomicFormula, Term, Variable, int]):
-    """Implements the abstract methods :meth:`add() <.abc.simplify.InternalRepresentation.add>`,
-    :meth:`extract() <.abc.simplify.InternalRepresentation.extract>`, and :meth:`next_()
-    <.abc.simplify.InternalRepresentation.next_>` of it super class
-    :class:`.abc.simplify.InternalRepresentation`. Required by
-    :class:`.Sets.simplify.Simplify` for instantiating the type variable
-    :data:`.abc.simplify.ρ` of :class:`.abc.simplify.Simplify`.
+        abc.InternalRepresentation[AtomicFormula, Term, Variable, int]):
+    """Implements the abstract methods :meth:`add() <.abc.InternalRepresentation.add>`,
+    :meth:`extract() <.abc.InternalRepresentation.extract>`, and :meth:`next_()
+    <.abc.InternalRepresentation.next_>` of it super class
+    :class:`.abc.InternalRepresentation`. Required by
+    :class:`.RCF.simplify.Simplify` for instantiating the type variable
+    :data:`.abc.ρ` of :class:`.abc.Simplify`.
     """
     _options: Options
     _knowl: _Knowledge = field(default_factory=_Knowledge)
     _subst: _Substitution = field(default_factory=_Substitution)
 
-    def add(self, gand: type[And | Or], atoms: Iterable[AtomicFormula]) -> abc.simplify.RESTART:
-        """Implements the abstract method :meth:`.abc.simplify.InternalRepresentation.add`.
+    def add(self, gand: type[And | Or], atoms: Iterable[AtomicFormula]) -> abc.RESTART:
+        """Implements the abstract method :meth:`.abc.InternalRepresentation.add`.
         """
         if gand is Or:
             atoms = (atom.to_complement() for atom in atoms)
-        restart = abc.simplify.RESTART.NONE
+        restart = abc.RESTART.NONE
         for atom in atoms:
             # print(f'{atom=}')
             # print(f'{self=}')
@@ -397,11 +538,11 @@ class InternalRepresentation(
             if self._knowl.is_known(maybe_bknowl):
                 if bknowl.is_substitution():
                     self._propagate(bknowl)
-                    restart = abc.simplify.RESTART.ALL
+                    restart = abc.RESTART.ALL
                 else:
                     self._knowl.add(bknowl)
-                    if restart is not abc.simplify.RESTART.ALL:
-                        restart = abc.simplify.RESTART.OTHERS
+                    if restart is not abc.RESTART.ALL:
+                        restart = abc.RESTART.OTHERS
             # print(f'{self=}')
             # print()
         return restart
@@ -421,7 +562,7 @@ class InternalRepresentation(
                     stack.append(bknowl)
 
     def extract(self, gand: type[And | Or], ref: Self) -> list[AtomicFormula]:
-        """Implements the abstract method :meth:`.abc.simplify.InternalRepresentation.extract`.
+        """Implements the abstract method :meth:`.abc.InternalRepresentation.extract`.
         """
 
         knowl = ref._knowl.reduce(self._subst.as_gb())
@@ -466,7 +607,7 @@ class InternalRepresentation(
         return L
 
     def next_(self, remove: Optional[Variable] = None) -> Self:
-        """Implements the abstract method :meth:`.abc.simplify.InternalRepresentation.next_`.
+        """Implements the abstract method :meth:`.abc.InternalRepresentation.next_`.
         """
         if remove is None:
             knowl = self._knowl.copy()
@@ -483,7 +624,7 @@ class InternalRepresentation(
         return self.__class__(self._options, knowl, subst)
 
     def restart(self, ir: Self) -> Self:
-        """Implements the abstract method :meth:`.abc.simplify.InternalRepresentation.restart`.
+        """Implements the abstract method :meth:`.abc.InternalRepresentation.restart`.
         """
         result = self.next_()
         for var, val in ir._subst:
@@ -518,16 +659,16 @@ class InternalRepresentation(
 
 
 @dataclass(frozen=True)
-class Simplify(abc.simplify.Simplify[
+class Simplify(abc.Simplify[
         AtomicFormula, Term, Variable, int, InternalRepresentation, Options]):
     """Deep simplification following [DolzmannSturm-1997]_. Implements the
     abstract methods :meth:`create_initial_representation
-    <.abc.simplify.Simplify.create_initial_representation>` and :meth:`simpl_at
-    <.abc.simplify.Simplify.simpl_at>` of its super class
-    :class:`.abc.simplify.Simplify`.
+    <.abc.Simplify.create_initial_representation>` and :meth:`simpl_at
+    <.abc.Simplify.simpl_at>` of its super class
+    :class:`.abc.Simplify`.
 
     The simplifier should be called via :func:`.simplify`, as described below.
-    In addition, this class inherits :meth:`.abc.simplify.Simplify.is_valid`,
+    In addition, this class inherits :meth:`.abc.Simplify.is_valid`,
     which should be called via :func:`.is_valid`, as described below.
     """
 
@@ -536,7 +677,7 @@ class Simplify(abc.simplify.Simplify[
     def create_initial_representation(self, assume: Iterable[AtomicFormula]) \
             -> InternalRepresentation:
         """Implements the abstract method
-        :meth:`.abc.simplify.Simplify.create_initial_representation`.
+        :meth:`.abc.Simplify.create_initial_representation`.
         """
         ir = InternalRepresentation(_options=self._options)
         for atom in assume:
@@ -557,7 +698,7 @@ class Simplify(abc.simplify.Simplify[
 
     def _post_process(self, f: Formula) -> Formula:
         """
-        >>> from deesi.theories.RCF import *
+        >>> from deesi.RCF import *
         >>> x, y = VV.get('x', 'y')
         >>> simplify(8*x + 12*y == 4)
         2*x + 3*y - 1 == 0
@@ -574,7 +715,7 @@ class Simplify(abc.simplify.Simplify[
 
     def simpl_at(self, atom: AtomicFormula, context: Optional[type[And] | type[Or]]) -> Formula:
         """Implements the abstract method
-        :meth:`.abc.simplify.Simplify.simpl_at`.
+        :meth:`.abc.Simplify.simpl_at`.
         """
         # MyPy does not recognize that And[Any, Any, Any] is an instance of
         # Hashable. https://github.com/python/mypy/issues/11470
@@ -721,7 +862,7 @@ def simplify(f: Formula, assume: Iterable[AtomicFormula] = [], **options) -> For
       that assumptions do not affect bound variables.
 
       >>> from deesi.firstorder import *
-      >>> from deesi.theories.RCF import *
+      >>> from deesi.RCF import *
       >>> a, b = VV.get('a', 'b')
       >>> simplify(Ex(a, And(a > 5, b > 10)), assume=[a > 10, b > 20])
       Ex(a, a - 5 > 0)
@@ -745,7 +886,7 @@ def simplify(f: Formula, assume: Iterable[AtomicFormula] = [], **options) -> For
       This keeps terms more complex but the boolean structure simpler.
 
       >>> from deesi.firstorder import *
-      >>> from deesi.theories.RCF import *
+      >>> from deesi.RCF import *
       >>> a, b, c = VV.get('a', 'b', 'c')
       >>> simplify(And(a * b == 0, c == 0))
       And(c == 0, Or(b == 0, a == 0))
@@ -769,7 +910,7 @@ def simplify(f: Formula, assume: Iterable[AtomicFormula] = [], **options) -> For
       `prefer_order` is :data:`False`, then the right hand sides are preferred.
 
       >>> from deesi.firstorder import *
-      >>> from deesi.theories.RCF import *
+      >>> from deesi.RCF import *
       >>> a, b = VV.get('a', 'b')
       >>> simplify(And(a >= 0, Or(b == 0, a > 0)))
       And(a >= 0, Or(b == 0, a > 0))
@@ -795,7 +936,7 @@ def simplify(f: Formula, assume: Iterable[AtomicFormula] = [], **options) -> For
       preferred.
 
       >>> from deesi.firstorder import *
-      >>> from deesi.theories.RCF import *
+      >>> from deesi.RCF import *
       >>> a, b = VV.get('a', 'b')
       >>> simplify(And(a != 0, Or(b == 0, a >= 0)))
       And(a != 0, Or(b == 0, a > 0))

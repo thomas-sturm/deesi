@@ -1,5 +1,5 @@
 >>> from deesi import *
->>> from deesi.theories.RCF import *
+>>> from deesi.RCF import *
 
 
 >>> a, b, c, d, x, y, z = VV.get('a', 'b', 'c', 'd', 'x', 'y', 'z')
@@ -10,7 +10,7 @@
 >>> redlog.gqe(Ex(x, (a + 1) * x**2 + b * x + c == 0), generic=redlog.GENERIC.NONE)
 Traceback (most recent call last):
 ...
-deesi.support.excepthook.NoTraceException: GENERIC.NONE is not supported - use redlog.qe instead
+ValueError: GENERIC.NONE is not supported - use redlog.qe instead
 
 >>> redlog.gqe(Ex(x, (a + 1) * x**2 + b * x + c == 0), generic=redlog.GENERIC.MONOMIAL)
 ([b != 0], Or(a + 1 == 0, 4*a*c - b^2 + 4*c <= 0))
