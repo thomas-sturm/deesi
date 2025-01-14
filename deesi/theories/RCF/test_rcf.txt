@@ -1,0 +1,12 @@
+>>> from deesi.theories.RCF import VV
+
+>>> VV.imp('a', 'b', 'x')
+>>> a * x + b == 0
+a*x + b == 0
+
+>>> def any_function():
+...    VV.imp('y')
+>>> any_function()
+Traceback (most recent call last):
+...
+RuntimeError: expecting imp to be called from the top level of module __main__; context is function any_function in module __main__

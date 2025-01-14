@@ -1,0 +1,12 @@
+>>> from deesi import *
+>>> from deesi.theories.RCF import *
+
+>>> list(sorted([T, F]))
+[T, F]
+>>> list(sorted([F, T]))
+[T, F]
+
+>>> x, y = VV.get('x', 'y')
+>>> f = x**2 + 2*x*y + y**2
+>>> list(sorted([Lt(f, 0), Ne(f, 0), Ge(f, 0)]))
+[x^2 + 2*x*y + y^2 != 0, x^2 + 2*x*y + y^2 < 0, x^2 + 2*x*y + y^2 >= 0]

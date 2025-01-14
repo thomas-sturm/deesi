@@ -1,0 +1,101 @@
+>>> from collections import Counter
+>>> from deesi.firstorder import *
+>>> from deesi.theories.RCF import *
+>>> a, b, x, y, z = VV.get('a', 'b', 'x', 'y', 'z')
+
+__eq__, __ne__, __hash__:
+>>> e1 = Ne(1, 0)
+>>> e2 = Ne(1, 0)
+>>> f = Ex(x, a * x + b == 0)
+>>> e1 == e2
+True
+>>> e1 != e2
+False
+>>> e1 is e2
+False
+>>> hash(e1) == hash(e2)
+True
+>>> e1 == f
+False
+>>> e1 != f
+True
+>>> hash(e1) == hash(f)
+False
+
+__repr__:
+>>> f = Ex(x, a * x + b == 0)
+>>> repr(f)
+'Ex(x, a*x + b == 0)'
+
+atoms:
+>>> f = And(Implies(3 * x == 0, All(z, 3 * x == 0)),
+...         Implies(All(x, x == 0), Ex(y, x * y == 1)))
+>>> type(f.atoms())
+<class 'generator'>
+>>> list(f.atoms())
+[3*x == 0, 3*x == 0, x == 0, x*y - 1 == 0]
+>>> set(f.atoms()) == {x == 0, 3*x == 0, x*y == 1}
+True
+>>> sum(1 for _ in f.atoms())
+4
+>>> Counter(f.atoms())
+Counter({3*x == 0: 2, x == 0: 1, x*y - 1 == 0: 1})
+>>> empty = And(T, F).atoms()
+>>> next(empty)
+Traceback (most recent call last):
+...
+StopIteration
+
+depth:
+>>> f = Implies(3*x == 0,
+...             All(z,
+...                 And(3*x == 0,
+...                     All(x,
+...                         Implies(x == 0,
+...                                 Ex(y,
+...                                    x*y == 1))))))
+>>> f.depth()
+6
+
+fvars:
+>>> list(All(y, And(Ex(x, a + x == y), Ex(z, x + y == a))).fvars())
+[a, a, x]
+
+qvars:
+>>> list(All(y, And(Ex(x, a == y), Ex(z, a == y))).qvars())
+[y, x, z]
+
+simplify:
+>>> f1 = And(x == y, T, x == y, And(x == z, x == x + z))
+>>> f1.simplify()
+And(x - y == 0, x - z == 0, z == 0)
+>>>
+>>> f2 = Or(x == 0, Or(x == 1, x == 2), And(x == y, x == z))
+>>> f2.simplify()
+Or(x == 0, x - 1 == 0, x - 2 == 0, And(x - y == 0, x - z == 0))
+
+subs:
+>>> VV.push()
+>>> a, b, x = VV.get('a', 'b', 'x')
+>>> f = Ex(x, x == a)
+>>> f.subs({x: a})
+Ex(x, a - x == 0)
+>>> f.subs({a: x})
+Ex(G0001_x, -G0001_x + x == 0)
+>>> g = Ex(x, And(_, b == 0))
+>>> g.subs({b: x})
+Ex(G0002_x, And(Ex(G0001_x, -G0001_x + G0002_x == 0), x == 0))
+>>> VV.pop()
+
+to_nnf:
+>>> f = Equivalent(And(a == 0, T), Ex(y, Not(y == a)))
+>>> f.to_nnf()
+And(Or(a != 0, F, Ex(y, a - y != 0)), Or(All(y, a - y == 0), And(a == 0, T)))
+>>> f.to_nnf(to_positive=False)
+And(Or(Not(a == 0), Not(T), Ex(y, Not(a - y == 0))),
+    Or(All(y, a - y == 0), And(a == 0, T)))
+
+traverse:
+>>> f = And(x == y, y < z)
+>>> f.traverse(map_atoms=lambda atom: atom.op(atom.lhs - atom.rhs, 0))
+And(x - y == 0, y - z < 0)

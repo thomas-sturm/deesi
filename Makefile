@@ -1,14 +1,7 @@
-# ignores = --ignore=logic1/theories/RCF/test_simplify_motor_redlog.txt --ignore-glob=*parallel*
-ignores = --ignore=logic1/theories/RCF/test_simplify_motor_redlog.txt
+ignores = --ignore=deesi/theories/RCF/test_simplify_motor_redlog.txt
 
 .PHONY: pytest pytest-full test-doc mypy test test-all doc pygount\
 		coverage coverage_html clean veryclean conda-build
-
-cython:
-	python cython-setup.py build_ext --inplace
-
-cython-clean:
-	/bin/rm logic1/theories/RCF/substitution.c logic1/theories/RCF/substitution.cpython-311-darwin.so
 
 pytest:
 	pytest -n 8 --doctest-cython --exitfirst --doctest-modules $(ignores)
@@ -30,7 +23,7 @@ test-doc:
 
 mypy:
 	mypy --explicit-package-bases stubs
-	mypy logic1
+	mypy deesi
 
 test: mypy pytest
 
@@ -40,7 +33,7 @@ doc:
 	cd doc && make clean html
 
 pygount:
-	pygount -f summary logic1
+	pygount -f summary deesi
 
 coverage:
 	coverage run -m pytest --doctest-modules
@@ -49,14 +42,5 @@ coverage_html: coverage
 	coverage html
 	open htmlcov/index.html
 
-clean:
-	rm -r build dist logic1.egg-info
-
 veryclean:
 	rm -rf htmlcov .coverage
-
-conda-build:
-	LOGIC1_GIT_REPO="file:$$(pwd)" \
-	LOGIC1_GIT_REV="$$(git rev-parse HEAD)" \
-	LOGIC1_VERSION="$$(python -m setuptools_scm)" \
-	rattler-build build --recipe conda

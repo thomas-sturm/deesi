@@ -1,0 +1,21 @@
+# A mninimal conda environment for running DeeSi
+#
+# You might want to adapt the name to your preferences.
+#
+# Install and activate as follows:
+#   $ conda env create -f deesi_minimal.yaml
+#   $ conda activate deesi_minimal
+#
+# Further packages can be added interactively anytime later on.
+#
+# https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html
+#
+name: deesi_minimal
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - more-itertools
+  - pyeda
+  - sage
+  - typing-extensions

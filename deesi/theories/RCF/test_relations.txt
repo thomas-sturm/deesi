@@ -1,0 +1,76 @@
+The following discussion once was a docstring in theories.RCF.atomic, where it
+definitely does not belong anymore. It should become part of the documentation
+in some way.
+
+Let `R` be a subclass of :class:`BinaryAtomicFormula` implementing atomic
+formulas with a binary relation symbol :math:`r`. For instance, if `R` is
+:class:`Eq`, then :math:`r` stands for the equality relation :math:`=` in
+the following discussion:
+
+>>> from deesi.theories.RCF import Eq, Ne, Ge, Le, Gt, Lt
+>>> Eq(0, 0).op
+ <class 'deesi.theories.RCF.atomic.Eq'>
+
+Assume that :math:`r` is defined on a domain :math:`D`. Then the
+*complement relation* of :math:`r` is defined as :math:`\overline{r} = D^2
+\setminus r`. It is avaialable as a class method :meth:`R.complement`,
+e.g.:
+
+>>> rels = (Eq, Ne, Ge, Le, Gt, Lt)
+>>> tuple(r.complement() for r in rels)
+(<class 'deesi.theories.RCF.atomic.Ne'>,
+ <class 'deesi.theories.RCF.atomic.Eq'>,
+ <class 'deesi.theories.RCF.atomic.Lt'>,
+ <class 'deesi.theories.RCF.atomic.Gt'>,
+ <class 'deesi.theories.RCF.atomic.Le'>,
+ <class 'deesi.theories.RCF.atomic.Ge'>)
+
+Since :math:`\overline{r}(s, t)` is equivalent to :math:`\neg r(s, t)`, the
+availability of complement relations is relevant for the computation of
+positive negation normal forms; compare :meth:`.firstorder.Formula.to_nnf`
+with keyword argument `to_positive=True`.
+
+The *converse relation* of :math:`r` is defined as
+:math:`r^{-1} = \{ (x, y) \in D : (y, x) \in r \}`.
+It is avaialable as a class method :meth:`R.converse`, e.g.:
+
+>>> tuple(r.converse() for r in rels)
+(<class 'deesi.theories.RCF.atomic.Eq'>,
+ <class 'deesi.theories.RCF.atomic.Ne'>,
+ <class 'deesi.theories.RCF.atomic.Le'>,
+ <class 'deesi.theories.RCF.atomic.Ge'>,
+ <class 'deesi.theories.RCF.atomic.Lt'>,
+ <class 'deesi.theories.RCF.atomic.Gt'>)
+
+The converse relation is the inverse with respect to composition.
+
+Finally, the *dual relation* of :math:`r` is defined as
+:math:`\overline{r}^{-1}`. It is available as a class method
+:meth:`R.dual`. Generally, :math:`\overline{r}^{-1} = \overline{r^{-1}}`,
+e.g.:
+
+>>> tuple(r.dual() for r in rels)
+(<class 'deesi.theories.RCF.atomic.Ne'>,
+ <class 'deesi.theories.RCF.atomic.Eq'>,
+ <class 'deesi.theories.RCF.atomic.Gt'>,
+ <class 'deesi.theories.RCF.atomic.Lt'>,
+ <class 'deesi.theories.RCF.atomic.Ge'>,
+ <class 'deesi.theories.RCF.atomic.Le'>)
+>>> all(r.dual() == r.complement().converse() for r in rels)
+True
+>>> all(r.dual() == r.converse().complement() for r in rels)
+True
+
+In the context of orderings, dualization turns strict inequalities into
+weak inequalities, and vice versa. Note that we also have duality and
+corresponding properties with Boolean functions, which is defined
+differently.
+
+All those operators on relations are involutive:
+
+>>> all(r.complement().complement() == r for r in rels)
+True
+>>> all(r.converse().converse() == r for r in rels)
+True
+>>> all(r.dual().dual() == r for r in rels)
+True
